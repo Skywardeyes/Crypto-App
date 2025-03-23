@@ -117,12 +117,66 @@ class CryptoApp:
         self.sym_output.pack(fill="both", expand=True, padx=5, pady=5)
         
     def create_asymmetric_ui(self):
-        # UI for asymmetric encryption
-        pass
+        frame = ttk.Frame(self.asym_tab)
+        frame.pack(padx=10, pady=10, fill="both", expand=True)
+        
+        # Key Generation Section
+        key_frame = ttk.LabelFrame(frame, text="RSA Key Pair")
+        key_frame.pack(fill="x", pady=(0, 10))
+        
+        ttk.Button(key_frame, text="Generate RSA Keys", command=self.generate_rsa_keys).pack(pady=5)
+        
+        # Input Section
+        input_frame = ttk.LabelFrame(frame, text="Input Text")
+        input_frame.pack(fill="x", pady=(0, 10))
+        
+        self.asym_input = tk.Text(input_frame, height=5)
+        self.asym_input.pack(fill="x", padx=5, pady=5)
+        
+        # Action Buttons
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill="x", pady=(0, 10))
+        
+        ttk.Button(btn_frame, text="Encrypt", command=self.encrypt_asymmetric).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Decrypt", command=self.decrypt_asymmetric).pack(side="left", padx=5)
+        
+        # Output Section
+        output_frame = ttk.LabelFrame(frame, text="Output")
+        output_frame.pack(fill="both", expand=True)
+        
+        self.asym_output = tk.Text(output_frame, height=5, state="disabled")
+        self.asym_output.pack(fill="both", expand=True, padx=5, pady=5)
         
     def create_signature_ui(self):
-        # UI for digital signatures
-        pass
+        frame = ttk.Frame(self.sig_tab)
+        frame.pack(padx=10, pady=10, fill="both", expand=True)
+        
+        # Certificate Section
+        cert_frame = ttk.LabelFrame(frame, text="Certificate")
+        cert_frame.pack(fill="x", pady=(0, 10))
+        
+        ttk.Button(cert_frame, text="Generate Certificate", command=self.generate_certificate).pack(pady=5)
+        
+        # Input Section
+        input_frame = ttk.LabelFrame(frame, text="Input Text")
+        input_frame.pack(fill="x", pady=(0, 10))
+        
+        self.sig_input = tk.Text(input_frame, height=5)
+        self.sig_input.pack(fill="x", padx=5, pady=5)
+        
+        # Action Buttons
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill="x", pady=(0, 10))
+        
+        ttk.Button(btn_frame, text="Sign", command=self.create_signature).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Verify", command=self.verify_signature).pack(side="left", padx=5)
+        
+        # Output Section
+        output_frame = ttk.LabelFrame(frame, text="Output")
+        output_frame.pack(fill="both", expand=True)
+        
+        self.sig_output = tk.Text(output_frame, height=5, state="disabled")
+        self.sig_output.pack(fill="both", expand=True, padx=5, pady=5)
         
     # Message Digest Functions
     def calculate_md5(self, data):
@@ -288,29 +342,189 @@ class CryptoApp:
         
     # Asymmetric Encryption Functions
     def generate_rsa_keys(self):
-        # Generate RSA key pair
-        pass
+        try:
+            key = RSA.generate(2048)
+            private_key = key.export_key()
+            public_key = key.publickey().export_key()
+            
+            # Save keys to files
+            with open("private.pem", "wb") as f:
+                f.write(private_key)
+            with open("public.pem", "wb") as f:
+                f.write(public_key)
+                
+            messagebox.showinfo("Success", "RSA keys generated and saved as private.pem and public.pem")
+        except Exception as e:
+            messagebox.showerror("Key Generation Error", str(e))
         
     def rsa_encrypt(self, plaintext, public_key):
-        # RSA encryption implementation
-        pass
+        try:
+            key = RSA.import_key(public_key)
+            cipher = PKCS1_OAEP.new(key)
+            ciphertext = cipher.encrypt(plaintext.encode())
+            return base64.b64encode(ciphertext).decode()
+        except Exception as e:
+            messagebox.showerror("Encryption Error", str(e))
+            return None
         
     def rsa_decrypt(self, ciphertext, private_key):
-        # RSA decryption implementation
-        pass
-        
+        try:
+            key = RSA.import_key(private_key)
+            cipher = PKCS1_OAEP.new(key)
+            ciphertext = base64.b64decode(ciphertext.encode())
+            plaintext = cipher.decrypt(ciphertext).decode()
+            return plaintext
+        except Exception as e:
+            messagebox.showerror("Decryption Error", str(e))
+            return None
+            
+    def encrypt_asymmetric(self):
+        data = self.asym_input.get("1.0", "end-1c")
+        if not data:
+            messagebox.showwarning("Input Error", "Please enter some text to encrypt")
+            return
+            
+        try:
+            with open("public.pem", "rb") as f:
+                public_key = f.read()
+                
+            result = self.rsa_encrypt(data, public_key)
+            if result:
+                self.asym_output.config(state="normal")
+                self.asym_output.delete("1.0", "end")
+                self.asym_output.insert("1.0", result)
+                self.asym_output.config(state="disabled")
+        except FileNotFoundError:
+            messagebox.showwarning("Key Error", "Please generate RSA keys first")
+        except Exception as e:
+            messagebox.showerror("Encryption Error", str(e))
+            
+    def decrypt_asymmetric(self):
+        data = self.asym_input.get("1.0", "end-1c")
+        if not data:
+            messagebox.showwarning("Input Error", "Please enter some text to decrypt")
+            return
+            
+        try:
+            with open("private.pem", "rb") as f:
+                private_key = f.read()
+                
+            result = self.rsa_decrypt(data, private_key)
+            if result:
+                self.asym_output.config(state="normal")
+                self.asym_output.delete("1.0", "end")
+                self.asym_output.insert("1.0", result)
+                self.asym_output.config(state="disabled")
+        except FileNotFoundError:
+            messagebox.showwarning("Key Error", "Please generate RSA keys first")
+        except Exception as e:
+            messagebox.showerror("Decryption Error", str(e))
+            
     # Digital Signature Functions
     def generate_certificate(self):
-        # Certificate generation implementation
-        pass
+        try:
+            key = RSA.generate(2048)
+            private_key = key.export_key()
+            public_key = key.publickey().export_key()
+            
+            # Create self-signed certificate
+            subject = issuer = x509.Name([
+                x509.NameAttribute(NameOID.COUNTRY_NAME, "CN"),
+                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Beijing"),
+                x509.NameAttribute(NameOID.LOCALITY_NAME, "Beijing"),
+                x509.NameAttribute(NameOID.ORGANIZATION_NAME, "CryptoApp"),
+                x509.NameAttribute(NameOID.COMMON_NAME, "cryptoapp.com"),
+            ])
+            
+            cert = x509.CertificateBuilder().subject_name(
+                subject
+            ).issuer_name(
+                issuer
+            ).public_key(
+                key.public_key()
+            ).serial_number(
+                x509.random_serial_number()
+            ).not_valid_before(
+                datetime.datetime.utcnow()
+            ).not_valid_after(
+                datetime.datetime.utcnow() + datetime.timedelta(days=365)
+            ).sign(key, hashes.SHA256())
+            
+            with open("certificate.pem", "wb") as f:
+                f.write(cert.public_bytes(serialization.Encoding.PEM))
+                
+            messagebox.showinfo("Success", "Certificate generated and saved as certificate.pem")
+        except Exception as e:
+            messagebox.showerror("Certificate Error", str(e))
         
     def create_signature(self, data, private_key):
-        # Signature creation implementation
-        pass
-        
+        try:
+            key = RSA.import_key(private_key)
+            h = SHA256.new(data.encode())
+            signature = pkcs1_15.new(key).sign(h)
+            return base64.b64encode(signature).decode()
+        except Exception as e:
+            messagebox.showerror("Signing Error", str(e))
+            return None
+            
     def verify_signature(self, data, signature, public_key):
-        # Signature verification implementation
-        pass
+        try:
+            key = RSA.import_key(public_key)
+            h = SHA256.new(data.encode())
+            signature = base64.b64decode(signature.encode())
+            pkcs1_15.new(key).verify(h, signature)
+            return True
+        except (ValueError, TypeError) as e:
+            return False
+        except Exception as e:
+            messagebox.showerror("Verification Error", str(e))
+            return False
+            
+    def create_signature(self):
+        data = self.sig_input.get("1.0", "end-1c")
+        if not data:
+            messagebox.showwarning("Input Error", "Please enter some text to sign")
+            return
+            
+        try:
+            with open("private.pem", "rb") as f:
+                private_key = f.read()
+                
+            result = self.create_signature(data, private_key)
+            if result:
+                self.sig_output.config(state="normal")
+                self.sig_output.delete("1.0", "end")
+                self.sig_output.insert("1.0", result)
+                self.sig_output.config(state="disabled")
+        except FileNotFoundError:
+            messagebox.showwarning("Key Error", "Please generate RSA keys first")
+        except Exception as e:
+            messagebox.showerror("Signing Error", str(e))
+            
+    def verify_signature(self):
+        data = self.sig_input.get("1.0", "end-1c")
+        signature = self.sig_output.get("1.0", "end-1c")
+        
+        if not data:
+            messagebox.showwarning("Input Error", "Please enter some text to verify")
+            return
+            
+        if not signature:
+            messagebox.showwarning("Signature Error", "Please create a signature first")
+            return
+            
+        try:
+            with open("public.pem", "rb") as f:
+                public_key = f.read()
+                
+            if self.verify_signature(data, signature, public_key):
+                messagebox.showinfo("Success", "Signature is valid")
+            else:
+                messagebox.showwarning("Warning", "Signature is invalid")
+        except FileNotFoundError:
+            messagebox.showwarning("Key Error", "Please generate RSA keys first")
+        except Exception as e:
+            messagebox.showerror("Verification Error", str(e))
 
 if __name__ == "__main__":
     root = tk.Tk()
