@@ -457,7 +457,7 @@ class CryptoApp:
         except Exception as e:
             messagebox.showerror("Certificate Error", str(e))
         
-    def _create_signature(self, data, private_key):
+    def _sign_data(self, data, private_key):
         try:
             key = RSA.import_key(private_key)
             h = SHA256.new(data.encode())
@@ -467,7 +467,7 @@ class CryptoApp:
             messagebox.showerror("Signing Error", str(e))
             return None
             
-    def _verify_signature(self, data, signature, public_key):
+    def _verify_data(self, data, signature, public_key):
         try:
             key = RSA.import_key(public_key)
             h = SHA256.new(data.encode())
@@ -490,7 +490,7 @@ class CryptoApp:
             with open("private.pem", "rb") as f:
                 private_key = f.read()
                 
-            result = self._create_signature(data, private_key)
+            result = self._sign_data(data, private_key)
             if result:
                 self.sig_output.config(state="normal")
                 self.sig_output.delete("1.0", "end")
