@@ -440,7 +440,7 @@ class CryptoApp:
         except Exception as e:
             messagebox.showerror("证书错误", str(e))
 
-    def create_signature(self, data, private_key):
+    def _sign_data(self, data, private_key):
         try:
             key = RSA.import_key(private_key)
             h = SHA256.new(data.encode())
@@ -450,7 +450,7 @@ class CryptoApp:
             messagebox.showerror("签名错误", str(e))
             return None
 
-    def verify_signature(self, data, signature, public_key):
+    def _verify_data(self, data, signature, public_key):
         try:
             key = RSA.import_key(public_key)
             h = SHA256.new(data.encode())
@@ -473,7 +473,7 @@ class CryptoApp:
             with open("private.pem", "rb") as f:
                 private_key = f.read()
 
-            result = self.create_signature(data, private_key)
+            result = self._sign_data(data, private_key)
             if result:
                 self.sig_output.config(state="normal")
                 self.sig_output.delete("1.0", "end")
@@ -500,7 +500,7 @@ class CryptoApp:
             with open("public.pem", "rb") as f:
                 public_key = f.read()
 
-            if self.verify_signature(data, signature, public_key):
+            if self._verify_data(data, signature, public_key):
                 messagebox.showinfo("成功", "签名有效")
             else:
                 messagebox.showwarning("警告", "签名无效")
